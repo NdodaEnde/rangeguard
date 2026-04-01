@@ -109,7 +109,7 @@ Camera 2: ___
 - [ ] Business hours (range open from ___ to ___)
 - [ ] Peak hours (busiest times for theft)
 - [ ] How many customers per day on average?
-- [ ] Current bucket ball price: R60 (confirm)
+- [ ] Current bucket ball price: R75 (confirmed)
 - [ ] Current short game price: R20 (confirm)
 - [ ] How does the sticker system work today? (colour, placement, who checks)
 - [ ] Approximate number of balls in the short game area at any time?
