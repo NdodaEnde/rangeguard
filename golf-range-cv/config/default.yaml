@@ -1,0 +1,100 @@
+# Golf Range CV — Default Configuration
+
+cameras:
+  - id: "cam_range_1"
+    name: "Range Camera 1"
+    source: "rtsp://admin:password@192.168.1.10:554/stream1"
+    zone: "range"
+    fps: 15
+    resolution: [1920, 1080]
+
+  - id: "cam_shortgame_1"
+    name: "Short Game Camera 1"
+    source: "rtsp://admin:password@192.168.1.11:554/stream1"
+    zone: "short_game"
+    fps: 15
+    resolution: [1920, 1080]
+
+  - id: "cam_transition_1"
+    name: "Transition Camera 1"
+    source: "rtsp://admin:password@192.168.1.12:554/stream1"
+    zone: "transition"
+    fps: 15
+    resolution: [1920, 1080]
+
+zones:
+  range:
+    name: "Driving Range"
+    color: [0, 255, 0]       # Green overlay
+    cameras: ["cam_range_1"]
+    # Polygon points defined per-camera in zone_maps below
+
+  short_game:
+    name: "Short Game Area"
+    color: [255, 165, 0]     # Orange overlay
+    cameras: ["cam_shortgame_1"]
+
+  transition:
+    name: "Transition Path"
+    color: [255, 255, 0]     # Yellow overlay
+    cameras: ["cam_transition_1"]
+
+zone_maps:
+  # Per-camera polygon definitions (normalized 0-1 coordinates)
+  cam_range_1:
+    range: [[0.0, 0.3], [1.0, 0.3], [1.0, 1.0], [0.0, 1.0]]
+
+  cam_shortgame_1:
+    short_game: [[0.0, 0.2], [1.0, 0.2], [1.0, 1.0], [0.0, 1.0]]
+
+  cam_transition_1:
+    transition: [[0.1, 0.0], [0.9, 0.0], [0.9, 1.0], [0.1, 1.0]]
+
+detection:
+  model: "yolov8n.pt"       # nano model for speed; use yolov8s.pt for accuracy
+  confidence: 0.5
+  person_class_id: 0         # COCO class 0 = person
+  device: "auto"             # auto-select GPU/CPU
+
+tracking:
+  max_age: 30                # Frames before a lost track is removed
+  min_hits: 3                # Min detections before track is confirmed
+  iou_threshold: 0.3         # IOU threshold for association
+
+reid:
+  model: "osnet_x1_0"       # OSNet variant
+  embedding_dim: 512
+  match_threshold: 0.4       # Cosine distance threshold for matching
+  gallery_ttl: 3600          # Seconds to keep appearance in gallery (1 hour)
+
+rules:
+  # Cross-zone theft detection
+  cross_zone_alert:
+    enabled: true
+    # Alert if person moves: range -> short_game -> range within this window
+    time_window: 1800        # 30 minutes
+    min_dwell_time: 120      # Must spend at least 2 min in second zone
+    cooldown: 300            # Don't re-alert same person within 5 min
+
+  # Unpaid usage detection
+  unpaid_usage:
+    enabled: true
+    # Alert if person is at range for > N seconds with no payment record
+    grace_period: 300        # 5 minutes before flagging
+
+alerts:
+  # Where to send alerts
+  websocket: true            # Push to dashboard via WebSocket
+  log_file: "alerts.log"
+  whatsapp:
+    enabled: false
+    # phone_number: "+27..."
+    # api_key: "..."
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins: ["http://localhost:3000", "http://localhost:5173"]
+
+database:
+  url: "sqlite+aiosqlite:///data/golf_range.db"

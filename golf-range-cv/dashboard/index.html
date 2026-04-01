@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Range CV — Revenue Protection Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'golf-green': '#2d5a27',
+                        'golf-dark': '#1a1a2e',
+                        'golf-card': '#16213e',
+                        'golf-accent': '#0f3460',
+                        'alert-high': '#e94560',
+                        'alert-medium': '#f59e0b',
+                        'alert-low': '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .alert-enter { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .pulse-dot { animation: pulse-dot 2s infinite; }
+    </style>
+</head>
+<body class="bg-golf-dark text-white min-h-screen">
+
+    <div id="app" class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-bold">Golf Range CV</h1>
+                <p class="text-gray-400 text-sm">Revenue Protection System</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="connection-status" class="flex items-center gap-2 text-sm">
+                    <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot" id="status-dot"></span>
+                    <span id="status-text">Connecting...</span>
+                </div>
+                <div class="text-sm text-gray-400" id="uptime"></div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
+                <div class="text-gray-400 text-xs uppercase tracking-wide">Cameras Online</div>
+                <div class="text-3xl font-bold mt-1" id="stat-cameras">0/0</div>
+            </div>
+            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
+                <div class="text-gray-400 text-xs uppercase tracking-wide">People Tracked</div>
+                <div class="text-3xl font-bold mt-1" id="stat-persons">0</div>
+            </div>
+            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
+                <div class="text-gray-400 text-xs uppercase tracking-wide">Active Alerts</div>
+                <div class="text-3xl font-bold mt-1 text-alert-high" id="stat-active-alerts">0</div>
+            </div>
+            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
+                <div class="text-gray-400 text-xs uppercase tracking-wide">Today's Alerts</div>
+                <div class="text-3xl font-bold mt-1" id="stat-total-alerts">0</div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Zone Occupancy -->
+            <div class="bg-golf-card rounded-xl p-6 border border-gray-700">
+                <h2 class="text-lg font-semibold mb-4">Zone Occupancy</h2>
+                <div id="zone-occupancy" class="space-y-4">
+                    <div class="zone-bar">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-green-400">Driving Range</span>
+                            <span id="zone-range-count">0</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="zone-range-bar" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="zone-bar">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-orange-400">Short Game Area</span>
+                            <span id="zone-shortgame-count">0</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="zone-shortgame-bar" class="bg-orange-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="zone-bar">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-yellow-400">Transition</span>
+                            <span id="zone-transition-count">0</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div id="zone-transition-bar" class="bg-yellow-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- People List -->
+                <h3 class="text-md font-semibold mt-6 mb-3">Active People</h3>
+                <div id="persons-list" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-gray-500 text-sm">No people detected</p>
+                </div>
+            </div>
+
+            <!-- Alert Feed -->
+            <div class="lg:col-span-2 bg-golf-card rounded-xl p-6 border border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">Alert Feed</h2>
+                    <span class="text-xs text-gray-400" id="alert-count">0 alerts</span>
+                </div>
+                <div id="alert-feed" class="space-y-3 max-h-[600px] overflow-y-auto">
+                    <div class="text-center text-gray-500 py-12">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>No alerts yet</p>
+                        <p class="text-sm mt-1">The system is monitoring for suspicious activity</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Camera Status -->
+        <div class="mt-6 bg-golf-card rounded-xl p-6 border border-gray-700">
+            <h2 class="text-lg font-semibold mb-4">Camera Status</h2>
+            <div id="camera-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <p class="text-gray-500 text-sm">Loading cameras...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- WebSocket Connection ---
+        let ws = null;
+        let reconnectTimer = null;
+        const WS_URL = `ws://${window.location.hostname || 'localhost'}:8000/ws`;
+
+        function connect() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-green-500 pulse-dot';
+                document.getElementById('status-text').textContent = 'Connected';
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                handleMessage(msg);
+            };
+
+            ws.onclose = () => {
+                document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-red-500 pulse-dot';
+                document.getElementById('status-text').textContent = 'Disconnected';
+                // Reconnect after 3 seconds
+                reconnectTimer = setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+                ws.close();
+            };
+        }
+
+        // --- Message Handlers ---
+        function handleMessage(msg) {
+            switch (msg.type) {
+                case 'init':
+                    updateDashboard(msg.data);
+                    break;
+                case 'alert':
+                    addAlert(msg.data);
+                    break;
+                case 'status':
+                    updateStatus(msg.data);
+                    break;
+            }
+        }
+
+        function updateDashboard(data) {
+            updateStatus(data.status);
+            updateCameras(data.cameras);
+            updatePersons(data.persons);
+
+            // Load existing alerts
+            const feed = document.getElementById('alert-feed');
+            if (data.recent_alerts && data.recent_alerts.length > 0) {
+                feed.innerHTML = '';
+                data.recent_alerts.forEach(alert => {
+                    knownAlertIds.add(alert.id);
+                    addAlert(alert, false);
+                });
+            }
+        }
+
+        function updateStatus(status) {
+            document.getElementById('stat-cameras').textContent =
+                `${status.cameras_online}/${status.cameras_total}`;
+            document.getElementById('stat-persons').textContent = status.persons_tracked;
+            document.getElementById('stat-active-alerts').textContent = status.active_alerts;
+            document.getElementById('stat-total-alerts').textContent = status.total_alerts_today;
+
+            // Update uptime
+            const hours = Math.floor(status.uptime_seconds / 3600);
+            const mins = Math.floor((status.uptime_seconds % 3600) / 60);
+            document.getElementById('uptime').textContent = `Uptime: ${hours}h ${mins}m`;
+
+            // Update zone bars
+            if (status.zone_occupancy) {
+                const maxOccupancy = 20; // Scale factor
+                status.zone_occupancy.forEach(zo => {
+                    const pct = Math.min(100, (zo.count / maxOccupancy) * 100);
+                    if (zo.zone.includes('Range') || zo.zone === 'range') {
+                        document.getElementById('zone-range-count').textContent = zo.count;
+                        document.getElementById('zone-range-bar').style.width = pct + '%';
+                    } else if (zo.zone.includes('Short') || zo.zone === 'short_game') {
+                        document.getElementById('zone-shortgame-count').textContent = zo.count;
+                        document.getElementById('zone-shortgame-bar').style.width = pct + '%';
+                    } else if (zo.zone.includes('Transition') || zo.zone === 'transition') {
+                        document.getElementById('zone-transition-count').textContent = zo.count;
+                        document.getElementById('zone-transition-bar').style.width = pct + '%';
+                    }
+                });
+            }
+        }
+
+        function updateCameras(cameras) {
+            const grid = document.getElementById('camera-grid');
+            if (!cameras || cameras.length === 0) {
+                grid.innerHTML = '<p class="text-gray-500 text-sm">No cameras configured</p>';
+                return;
+            }
+
+            grid.innerHTML = cameras.map(cam => `
+                <div class="bg-golf-accent rounded-lg p-4 flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full ${cam.is_online ? 'bg-green-500' : 'bg-red-500'}"></div>
+                    <div>
+                        <div class="font-medium text-sm">${cam.name}</div>
+                        <div class="text-xs text-gray-400">Zone: ${cam.zone} | ${cam.is_online ? 'Online' : 'Offline'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePersons(persons) {
+            const list = document.getElementById('persons-list');
+            if (!persons || persons.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-sm">No people detected</p>';
+                return;
+            }
+
+            list.innerHTML = persons.map(p => {
+                const duration = Math.floor(p.duration_seconds / 60);
+                const zoneColor = p.current_zone?.includes('Range') ? 'text-green-400' :
+                                  p.current_zone?.includes('Short') ? 'text-orange-400' :
+                                  'text-yellow-400';
+                return `
+                    <div class="flex items-center justify-between bg-golf-accent rounded-lg px-3 py-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-golf-dark flex items-center justify-center text-xs font-bold">
+                                #${p.global_id}
+                            </div>
+                            <span class="${zoneColor} text-sm">${p.current_zone || 'Unknown'}</span>
+                        </div>
+                        <span class="text-xs text-gray-400">${duration}m</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addAlert(alert, animate = true) {
+            const feed = document.getElementById('alert-feed');
+
+            // Remove placeholder if present
+            if (feed.querySelector('.text-center')) {
+                feed.innerHTML = '';
+            }
+
+            const severityColors = {
+                high: 'border-alert-high bg-red-500/10',
+                medium: 'border-alert-medium bg-yellow-500/10',
+                low: 'border-alert-low bg-blue-500/10',
+            };
+
+            const severityBadge = {
+                high: 'bg-alert-high',
+                medium: 'bg-alert-medium',
+                low: 'bg-alert-low',
+            };
+
+            const time = new Date(alert.timestamp * 1000).toLocaleTimeString();
+            const colorClass = severityColors[alert.severity] || severityColors.low;
+            const badgeClass = severityBadge[alert.severity] || severityBadge.low;
+
+            const el = document.createElement('div');
+            el.className = `border-l-4 rounded-r-lg p-4 ${colorClass} ${animate ? 'alert-enter' : ''}`;
+            el.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="${badgeClass} text-white text-xs px-2 py-0.5 rounded-full uppercase font-bold">
+                                ${alert.severity}
+                            </span>
+                            <span class="text-xs text-gray-400">${time}</span>
+                            <span class="text-xs text-gray-500">${alert.id}</span>
+                        </div>
+                        <p class="text-sm">${alert.message}</p>
+                        ${alert.zone_path?.length ? `
+                            <div class="flex items-center gap-1 mt-2 text-xs text-gray-400">
+                                ${alert.zone_path.map(z => `<span class="bg-golf-dark px-2 py-0.5 rounded">${z}</span>`).join('<span>→</span>')}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <button onclick="acknowledgeAlert('${alert.id}', this)"
+                            class="ml-3 text-xs bg-golf-accent hover:bg-gray-600 px-3 py-1 rounded transition-colors ${alert.acknowledged ? 'opacity-30' : ''}">
+                        ${alert.acknowledged ? 'Done' : 'Acknowledge'}
+                    </button>
+                </div>
+            `;
+
+            feed.insertBefore(el, feed.firstChild);
+
+            // Update count
+            document.getElementById('alert-count').textContent =
+                `${feed.children.length} alerts`;
+
+            // Play notification sound for high severity
+            if (alert.severity === 'high' && animate) {
+                playAlertSound();
+            }
+        }
+
+        async function acknowledgeAlert(alertId, button) {
+            try {
+                const resp = await fetch(`/api/alerts/${alertId}/acknowledge`, { method: 'POST' });
+                if (resp.ok) {
+                    button.textContent = 'Done';
+                    button.classList.add('opacity-30');
+                }
+            } catch (e) {
+                console.error('Failed to acknowledge:', e);
+            }
+        }
+
+        function playAlertSound() {
+            // Simple beep using Web Audio API
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 800;
+                gain.gain.value = 0.1;
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } catch (e) {}
+        }
+
+        // --- Periodic Refresh (status + alerts) ---
+        let knownAlertIds = new Set();
+
+        setInterval(async () => {
+            try {
+                // Refresh status
+                const statusResp = await fetch('/api/status');
+                if (statusResp.ok) {
+                    const status = await statusResp.json();
+                    updateStatus(status);
+                }
+
+                // Refresh alerts
+                const alertsResp = await fetch('/api/alerts?limit=50');
+                if (alertsResp.ok) {
+                    const alerts = await alertsResp.json();
+                    let hasNew = false;
+                    alerts.forEach(alert => {
+                        if (!knownAlertIds.has(alert.id)) {
+                            knownAlertIds.add(alert.id);
+                            addAlert(alert, hasNew);
+                            hasNew = true;
+                        }
+                    });
+                }
+            } catch (e) {}
+        }, 3000);
+
+        // --- Start ---
+        connect();
+    </script>
+</body>
+</html>

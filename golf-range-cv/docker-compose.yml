@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  golf-range-cv:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./dashboard:/app/dashboard
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    # For GPU support on Jetson/NVIDIA:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]

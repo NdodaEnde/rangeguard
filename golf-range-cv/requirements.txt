@@ -1,0 +1,31 @@
+# Core CV
+ultralytics>=8.1.0          # YOLOv8 person detection
+opencv-python>=4.9.0        # Video processing
+numpy>=1.24.0
+
+# Tracking
+lap>=0.4.0                  # Linear assignment for ByteTrack
+scipy>=1.11.0               # Hungarian algorithm fallback
+filterpy>=1.4.5             # Kalman filtering
+
+# Person Re-Identification
+torch>=2.1.0
+torchvision>=0.16.0
+torchreid>=1.4.0            # OSNet Re-ID models
+
+# Backend API
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+websockets>=12.0
+pydantic>=2.5.0
+python-multipart>=0.0.6
+
+# Database
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# Utilities
+pyyaml>=6.0
+Pillow>=10.0.0
+python-dotenv>=1.0.0
+loguru>=0.7.0

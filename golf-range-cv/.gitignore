@@ -1,0 +1,37 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Models (large files)
+models/*.pt
+models/*.pth
+models/*.onnx
+
+# Data
+data/
+logs/
+*.db
+
+# Environment
+.env
+.venv/
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alert logs
+alerts.log
+demo_alerts.log
