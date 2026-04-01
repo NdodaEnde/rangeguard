@@ -168,6 +168,8 @@ class PersonTracker:
             first_seen=timestamp,
             last_seen=timestamp,
         )
+        if track.hits >= self.min_hits:
+            track.state = "confirmed"
         self._tracks.append(track)
         self._next_id += 1
 
