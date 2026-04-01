@@ -3,20 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Golf Range CV — Revenue Protection Dashboard</title>
+    <title>RangeGuard — Revenue Protection Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        'golf-green': '#2d5a27',
-                        'golf-dark': '#1a1a2e',
-                        'golf-card': '#16213e',
-                        'golf-accent': '#0f3460',
-                        'alert-high': '#e94560',
-                        'alert-medium': '#f59e0b',
-                        'alert-low': '#3b82f6',
+                        'turf':     { 50: '#f0fdf4', 100: '#dcfce7', 400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+                        'fairway':  '#0c1a0e',
+                        'card':     '#111c13',
+                        'card-alt': '#182a1b',
+                        'accent':   '#1e3a22',
+                        'border':   '#2a4a2e',
+                        'alert-high': '#ef4444',
+                        'alert-med':  '#f59e0b',
+                        'alert-low':  '#3b82f6',
                     }
                 }
             }
@@ -24,385 +28,525 @@
     </script>
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
-        .alert-enter { animation: slideIn 0.3s ease-out; }
+        .alert-enter { animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from { transform: translateY(-12px); opacity: 0; }
+            to   { transform: translateY(0); opacity: 1; }
         }
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        .pulse-dot { animation: pulse-dot 2s infinite; }
+        @keyframes pulse-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .pulse-live { animation: pulse-live 2s infinite; }
+        @keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .count-up { animation: countUp 0.4s ease-out; }
+        .revenue-glow { text-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        /* Timeline */
+        .timeline-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid; }
+        .timeline-line { width: 2px; min-height: 20px; }
+        /* Tabs */
+        .tab-active { border-bottom: 2px solid #22c55e; color: #fff; }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #9ca3af; }
+        .tab-inactive:hover { color: #d1d5db; }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a4a2e; border-radius: 2px; }
+        /* Notification badge bounce */
+        @keyframes badge-bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .badge-bounce { animation: badge-bounce 0.3s ease; }
     </style>
 </head>
-<body class="bg-golf-dark text-white min-h-screen">
+<body class="bg-fairway text-white min-h-screen">
 
-    <div id="app" class="max-w-7xl mx-auto px-4 py-6">
+<div id="app" class="max-w-7xl mx-auto px-4 py-5">
 
-        <!-- Header -->
-        <header class="flex items-center justify-between mb-8">
+    <!-- ====== HEADER ====== -->
+    <header class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-turf-700 flex items-center justify-center">
+                <svg class="w-5 h-5 text-turf-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </div>
             <div>
-                <h1 class="text-2xl font-bold">Golf Range CV</h1>
-                <p class="text-gray-400 text-sm">Revenue Protection System</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <div id="connection-status" class="flex items-center gap-2 text-sm">
-                    <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot" id="status-dot"></span>
-                    <span id="status-text">Connecting...</span>
-                </div>
-                <div class="text-sm text-gray-400" id="uptime"></div>
-            </div>
-        </header>
-
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
-                <div class="text-gray-400 text-xs uppercase tracking-wide">Cameras Online</div>
-                <div class="text-3xl font-bold mt-1" id="stat-cameras">0/0</div>
-            </div>
-            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
-                <div class="text-gray-400 text-xs uppercase tracking-wide">People Tracked</div>
-                <div class="text-3xl font-bold mt-1" id="stat-persons">0</div>
-            </div>
-            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
-                <div class="text-gray-400 text-xs uppercase tracking-wide">Active Alerts</div>
-                <div class="text-3xl font-bold mt-1 text-alert-high" id="stat-active-alerts">0</div>
-            </div>
-            <div class="bg-golf-card rounded-xl p-4 border border-gray-700">
-                <div class="text-gray-400 text-xs uppercase tracking-wide">Today's Alerts</div>
-                <div class="text-3xl font-bold mt-1" id="stat-total-alerts">0</div>
+                <h1 class="text-xl font-bold tracking-tight">RangeGuard</h1>
+                <p class="text-turf-400 text-xs font-medium tracking-wide uppercase">Revenue Protection</p>
             </div>
         </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Zone Occupancy -->
-            <div class="bg-golf-card rounded-xl p-6 border border-gray-700">
-                <h2 class="text-lg font-semibold mb-4">Zone Occupancy</h2>
-                <div id="zone-occupancy" class="space-y-4">
-                    <div class="zone-bar">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-green-400">Driving Range</span>
-                            <span id="zone-range-count">0</span>
-                        </div>
-                        <div class="w-full bg-gray-700 rounded-full h-3">
-                            <div id="zone-range-bar" class="bg-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="zone-bar">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-orange-400">Short Game Area</span>
-                            <span id="zone-shortgame-count">0</span>
-                        </div>
-                        <div class="w-full bg-gray-700 rounded-full h-3">
-                            <div id="zone-shortgame-bar" class="bg-orange-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="zone-bar">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-yellow-400">Transition</span>
-                            <span id="zone-transition-count">0</span>
-                        </div>
-                        <div class="w-full bg-gray-700 rounded-full h-3">
-                            <div id="zone-transition-bar" class="bg-yellow-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- People List -->
-                <h3 class="text-md font-semibold mt-6 mb-3">Active People</h3>
-                <div id="persons-list" class="space-y-2 max-h-64 overflow-y-auto">
-                    <p class="text-gray-500 text-sm">No people detected</p>
-                </div>
+        <div class="flex items-center gap-5">
+            <div class="flex items-center gap-2 text-xs">
+                <span class="w-2 h-2 rounded-full bg-red-500 pulse-live" id="status-dot"></span>
+                <span id="status-text" class="text-gray-400">Connecting...</span>
             </div>
+            <div class="text-xs text-gray-500" id="uptime"></div>
+        </div>
+    </header>
 
-            <!-- Alert Feed -->
-            <div class="lg:col-span-2 bg-golf-card rounded-xl p-6 border border-gray-700">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold">Alert Feed</h2>
-                    <span class="text-xs text-gray-400" id="alert-count">0 alerts</span>
-                </div>
-                <div id="alert-feed" class="space-y-3 max-h-[600px] overflow-y-auto">
-                    <div class="text-center text-gray-500 py-12">
-                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <p>No alerts yet</p>
-                        <p class="text-sm mt-1">The system is monitoring for suspicious activity</p>
-                    </div>
-                </div>
+    <!-- ====== REVENUE HERO + STATS ====== -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <!-- Revenue Saved — hero card -->
+        <div class="md:col-span-2 bg-gradient-to-br from-turf-900 to-turf-800 rounded-xl p-5 border border-turf-700 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-turf-700/20 rounded-full -translate-y-8 translate-x-8"></div>
+            <div class="relative">
+                <div class="text-turf-400 text-xs font-semibold uppercase tracking-wider mb-1">Estimated Revenue Saved</div>
+                <div class="text-4xl font-extrabold text-turf-400 revenue-glow count-up" id="stat-revenue">R0</div>
+                <div class="text-xs text-gray-400 mt-2" id="revenue-detail">0 incidents prevented today</div>
             </div>
         </div>
-
-        <!-- Camera Status -->
-        <div class="mt-6 bg-golf-card rounded-xl p-6 border border-gray-700">
-            <h2 class="text-lg font-semibold mb-4">Camera Status</h2>
-            <div id="camera-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <p class="text-gray-500 text-sm">Loading cameras...</p>
-            </div>
+        <!-- Stat cards -->
+        <div class="bg-card rounded-xl p-4 border border-border">
+            <div class="text-gray-500 text-xs font-medium uppercase tracking-wide">Cameras</div>
+            <div class="text-2xl font-bold mt-1" id="stat-cameras">0/0</div>
+        </div>
+        <div class="bg-card rounded-xl p-4 border border-border">
+            <div class="text-gray-500 text-xs font-medium uppercase tracking-wide">Tracked</div>
+            <div class="text-2xl font-bold mt-1" id="stat-persons">0</div>
+        </div>
+        <div class="bg-card rounded-xl p-4 border border-border">
+            <div class="text-gray-500 text-xs font-medium uppercase tracking-wide">Active Alerts</div>
+            <div class="text-2xl font-bold mt-1 text-alert-high" id="stat-active-alerts">0</div>
         </div>
     </div>
 
-    <script>
-        // --- WebSocket Connection ---
-        let ws = null;
-        let reconnectTimer = null;
-        const WS_URL = `ws://${window.location.hostname || 'localhost'}:8000/ws`;
+    <!-- ====== MAIN GRID ====== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        function connect() {
-            ws = new WebSocket(WS_URL);
-
-            ws.onopen = () => {
-                document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-green-500 pulse-dot';
-                document.getElementById('status-text').textContent = 'Connected';
-                console.log('WebSocket connected');
-            };
-
-            ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                handleMessage(msg);
-            };
-
-            ws.onclose = () => {
-                document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-red-500 pulse-dot';
-                document.getElementById('status-text').textContent = 'Disconnected';
-                // Reconnect after 3 seconds
-                reconnectTimer = setTimeout(connect, 3000);
-            };
-
-            ws.onerror = (err) => {
-                console.error('WebSocket error:', err);
-                ws.close();
-            };
-        }
-
-        // --- Message Handlers ---
-        function handleMessage(msg) {
-            switch (msg.type) {
-                case 'init':
-                    updateDashboard(msg.data);
-                    break;
-                case 'alert':
-                    addAlert(msg.data);
-                    break;
-                case 'status':
-                    updateStatus(msg.data);
-                    break;
-            }
-        }
-
-        function updateDashboard(data) {
-            updateStatus(data.status);
-            updateCameras(data.cameras);
-            updatePersons(data.persons);
-
-            // Load existing alerts
-            const feed = document.getElementById('alert-feed');
-            if (data.recent_alerts && data.recent_alerts.length > 0) {
-                feed.innerHTML = '';
-                data.recent_alerts.forEach(alert => {
-                    knownAlertIds.add(alert.id);
-                    addAlert(alert, false);
-                });
-            }
-        }
-
-        function updateStatus(status) {
-            document.getElementById('stat-cameras').textContent =
-                `${status.cameras_online}/${status.cameras_total}`;
-            document.getElementById('stat-persons').textContent = status.persons_tracked;
-            document.getElementById('stat-active-alerts').textContent = status.active_alerts;
-            document.getElementById('stat-total-alerts').textContent = status.total_alerts_today;
-
-            // Update uptime
-            const hours = Math.floor(status.uptime_seconds / 3600);
-            const mins = Math.floor((status.uptime_seconds % 3600) / 60);
-            document.getElementById('uptime').textContent = `Uptime: ${hours}h ${mins}m`;
-
-            // Update zone bars
-            if (status.zone_occupancy) {
-                const maxOccupancy = 20; // Scale factor
-                status.zone_occupancy.forEach(zo => {
-                    const pct = Math.min(100, (zo.count / maxOccupancy) * 100);
-                    if (zo.zone.includes('Range') || zo.zone === 'range') {
-                        document.getElementById('zone-range-count').textContent = zo.count;
-                        document.getElementById('zone-range-bar').style.width = pct + '%';
-                    } else if (zo.zone.includes('Short') || zo.zone === 'short_game') {
-                        document.getElementById('zone-shortgame-count').textContent = zo.count;
-                        document.getElementById('zone-shortgame-bar').style.width = pct + '%';
-                    } else if (zo.zone.includes('Transition') || zo.zone === 'transition') {
-                        document.getElementById('zone-transition-count').textContent = zo.count;
-                        document.getElementById('zone-transition-bar').style.width = pct + '%';
-                    }
-                });
-            }
-        }
-
-        function updateCameras(cameras) {
-            const grid = document.getElementById('camera-grid');
-            if (!cameras || cameras.length === 0) {
-                grid.innerHTML = '<p class="text-gray-500 text-sm">No cameras configured</p>';
-                return;
-            }
-
-            grid.innerHTML = cameras.map(cam => `
-                <div class="bg-golf-accent rounded-lg p-4 flex items-center gap-3">
-                    <div class="w-3 h-3 rounded-full ${cam.is_online ? 'bg-green-500' : 'bg-red-500'}"></div>
+        <!-- LEFT: Zone Occupancy + People -->
+        <div class="space-y-5">
+            <!-- Zone Occupancy -->
+            <div class="bg-card rounded-xl p-5 border border-border">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Zone Occupancy</h2>
+                <div class="space-y-4">
                     <div>
-                        <div class="font-medium text-sm">${cam.name}</div>
-                        <div class="text-xs text-gray-400">Zone: ${cam.zone} | ${cam.is_online ? 'Online' : 'Offline'}</div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span class="text-turf-400 font-medium">Driving Range</span>
+                            <span class="text-gray-400" id="zone-range-count">0 people</span>
+                        </div>
+                        <div class="w-full bg-accent rounded-full h-2.5">
+                            <div id="zone-range-bar" class="bg-turf-500 h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span class="text-orange-400 font-medium">Short Game Area</span>
+                            <span class="text-gray-400" id="zone-shortgame-count">0 people</span>
+                        </div>
+                        <div class="w-full bg-accent rounded-full h-2.5">
+                            <div id="zone-shortgame-bar" class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span class="text-yellow-400 font-medium">Transition</span>
+                            <span class="text-gray-400" id="zone-transition-count">0 people</span>
+                        </div>
+                        <div class="w-full bg-accent rounded-full h-2.5">
+                            <div id="zone-transition-bar" class="bg-yellow-500 h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>
 
-        function updatePersons(persons) {
-            const list = document.getElementById('persons-list');
-            if (!persons || persons.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-sm">No people detected</p>';
-                return;
-            }
+            <!-- Cameras -->
+            <div class="bg-card rounded-xl p-5 border border-border">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Cameras</h2>
+                <div id="camera-grid" class="space-y-2">
+                    <p class="text-gray-600 text-xs">Loading...</p>
+                </div>
+            </div>
 
-            list.innerHTML = persons.map(p => {
-                const duration = Math.floor(p.duration_seconds / 60);
-                const zoneColor = p.current_zone?.includes('Range') ? 'text-green-400' :
-                                  p.current_zone?.includes('Short') ? 'text-orange-400' :
-                                  'text-yellow-400';
-                return `
-                    <div class="flex items-center justify-between bg-golf-accent rounded-lg px-3 py-2">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-golf-dark flex items-center justify-center text-xs font-bold">
-                                #${p.global_id}
-                            </div>
-                            <span class="${zoneColor} text-sm">${p.current_zone || 'Unknown'}</span>
-                        </div>
-                        <span class="text-xs text-gray-400">${duration}m</span>
+            <!-- Daily Stats -->
+            <div class="bg-card rounded-xl p-5 border border-border">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Today's Summary</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-accent rounded-lg p-3 text-center">
+                        <div class="text-xl font-bold" id="stats-total-alerts">0</div>
+                        <div class="text-[10px] text-gray-400 uppercase">Total Alerts</div>
                     </div>
-                `;
-            }).join('');
-        }
-
-        function addAlert(alert, animate = true) {
-            const feed = document.getElementById('alert-feed');
-
-            // Remove placeholder if present
-            if (feed.querySelector('.text-center')) {
-                feed.innerHTML = '';
-            }
-
-            const severityColors = {
-                high: 'border-alert-high bg-red-500/10',
-                medium: 'border-alert-medium bg-yellow-500/10',
-                low: 'border-alert-low bg-blue-500/10',
-            };
-
-            const severityBadge = {
-                high: 'bg-alert-high',
-                medium: 'bg-alert-medium',
-                low: 'bg-alert-low',
-            };
-
-            const time = new Date(alert.timestamp * 1000).toLocaleTimeString();
-            const colorClass = severityColors[alert.severity] || severityColors.low;
-            const badgeClass = severityBadge[alert.severity] || severityBadge.low;
-
-            const el = document.createElement('div');
-            el.className = `border-l-4 rounded-r-lg p-4 ${colorClass} ${animate ? 'alert-enter' : ''}`;
-            el.innerHTML = `
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="${badgeClass} text-white text-xs px-2 py-0.5 rounded-full uppercase font-bold">
-                                ${alert.severity}
-                            </span>
-                            <span class="text-xs text-gray-400">${time}</span>
-                            <span class="text-xs text-gray-500">${alert.id}</span>
-                        </div>
-                        <p class="text-sm">${alert.message}</p>
-                        ${alert.zone_path?.length ? `
-                            <div class="flex items-center gap-1 mt-2 text-xs text-gray-400">
-                                ${alert.zone_path.map(z => `<span class="bg-golf-dark px-2 py-0.5 rounded">${z}</span>`).join('<span>→</span>')}
-                            </div>
-                        ` : ''}
+                    <div class="bg-accent rounded-lg p-3 text-center">
+                        <div class="text-xl font-bold text-turf-400" id="stats-revenue-saved">R0</div>
+                        <div class="text-[10px] text-gray-400 uppercase">Revenue Saved</div>
                     </div>
-                    <button onclick="acknowledgeAlert('${alert.id}', this)"
-                            class="ml-3 text-xs bg-golf-accent hover:bg-gray-600 px-3 py-1 rounded transition-colors ${alert.acknowledged ? 'opacity-30' : ''}">
-                        ${alert.acknowledged ? 'Done' : 'Acknowledge'}
+                    <div class="bg-accent rounded-lg p-3 text-center">
+                        <div class="text-xl font-bold" id="stats-people-tracked">0</div>
+                        <div class="text-[10px] text-gray-400 uppercase">People Tracked</div>
+                    </div>
+                    <div class="bg-accent rounded-lg p-3 text-center">
+                        <div class="text-xl font-bold" id="stats-theft-rate">0%</div>
+                        <div class="text-[10px] text-gray-400 uppercase">Theft Rate</div>
+                    </div>
+                </div>
+                <!-- Hourly bar chart -->
+                <h3 class="text-xs font-medium text-gray-400 mt-4 mb-2">Alerts by Hour</h3>
+                <div id="hourly-chart" class="flex items-end gap-1 h-16">
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Alert Feed (2 cols) -->
+        <div class="lg:col-span-2 bg-card rounded-xl border border-border flex flex-col" style="max-height: 780px;">
+            <!-- Tab bar -->
+            <div class="flex items-center justify-between px-5 pt-4 pb-0 border-b border-border">
+                <div class="flex gap-4">
+                    <button onclick="switchTab('alerts')" id="tab-alerts" class="pb-3 text-sm font-medium tab-active transition-colors">
+                        Alert Feed
+                    </button>
+                    <button onclick="switchTab('timeline')" id="tab-timeline" class="pb-3 text-sm font-medium tab-inactive transition-colors">
+                        Movement Timeline
                     </button>
                 </div>
+                <span class="text-[10px] text-gray-500 pb-3" id="alert-count">0 alerts</span>
+            </div>
+
+            <!-- Alert Feed Panel -->
+            <div id="panel-alerts" class="flex-1 overflow-y-auto p-4 space-y-2.5">
+                <div class="text-center text-gray-600 py-16">
+                    <svg class="w-10 h-10 mx-auto mb-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-sm">No alerts yet</p>
+                    <p class="text-xs mt-1">Monitoring for suspicious activity...</p>
+                </div>
+            </div>
+
+            <!-- Movement Timeline Panel (hidden by default) -->
+            <div id="panel-timeline" class="flex-1 overflow-y-auto p-5 hidden">
+                <div id="timeline-content" class="text-center text-gray-600 py-16">
+                    <p class="text-sm">Click an alert to view movement timeline</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ====== CONFIG ======
+    const BUCKET_PRICE = 60;  // R60 per bucket
+    const WS_URL = `ws://${window.location.hostname || 'localhost'}:8000/ws`;
+
+    // ====== STATE ======
+    let ws = null;
+    let knownAlertIds = new Set();
+    let allAlerts = [];
+    let alertsByHour = new Array(24).fill(0);
+
+    // ====== WEBSOCKET ======
+    function connect() {
+        ws = new WebSocket(WS_URL);
+        ws.onopen = () => {
+            document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-turf-500 pulse-live';
+            document.getElementById('status-text').textContent = 'Live';
+            document.getElementById('status-text').className = 'text-turf-400';
+        };
+        ws.onmessage = (e) => {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'init') updateDashboard(msg.data);
+            else if (msg.type === 'alert') addAlert(msg.data);
+            else if (msg.type === 'status') updateStatus(msg.data);
+        };
+        ws.onclose = () => {
+            document.getElementById('status-dot').className = 'w-2 h-2 rounded-full bg-red-500 pulse-live';
+            document.getElementById('status-text').textContent = 'Disconnected';
+            document.getElementById('status-text').className = 'text-gray-400';
+            setTimeout(connect, 3000);
+        };
+        ws.onerror = () => ws.close();
+    }
+
+    // ====== DASHBOARD UPDATE ======
+    function updateDashboard(data) {
+        updateStatus(data.status);
+        updateCameras(data.cameras);
+        if (data.recent_alerts?.length > 0) {
+            const feed = document.getElementById('panel-alerts');
+            feed.innerHTML = '';
+            data.recent_alerts.forEach(a => {
+                knownAlertIds.add(a.id);
+                addAlert(a, false);
+            });
+        }
+    }
+
+    function updateStatus(s) {
+        document.getElementById('stat-cameras').textContent = `${s.cameras_online}/${s.cameras_total}`;
+        document.getElementById('stat-persons').textContent = s.persons_tracked;
+        document.getElementById('stat-active-alerts').textContent = s.active_alerts;
+
+        const hours = Math.floor(s.uptime_seconds / 3600);
+        const mins = Math.floor((s.uptime_seconds % 3600) / 60);
+        document.getElementById('uptime').textContent = `${hours}h ${mins}m uptime`;
+
+        // Zone bars
+        const max = 20;
+        (s.zone_occupancy || []).forEach(zo => {
+            const pct = Math.min(100, (zo.count / max) * 100);
+            if (zo.zone.includes('Range') || zo.zone === 'range') {
+                document.getElementById('zone-range-count').textContent = zo.count + ' people';
+                document.getElementById('zone-range-bar').style.width = pct + '%';
+            } else if (zo.zone.includes('Short') || zo.zone === 'short_game') {
+                document.getElementById('zone-shortgame-count').textContent = zo.count + ' people';
+                document.getElementById('zone-shortgame-bar').style.width = pct + '%';
+            } else if (zo.zone.includes('Transition') || zo.zone === 'transition') {
+                document.getElementById('zone-transition-count').textContent = zo.count + ' people';
+                document.getElementById('zone-transition-bar').style.width = pct + '%';
+            }
+        });
+
+        // Revenue + daily stats
+        const theftAlerts = allAlerts.filter(a => a.alert_type === 'cross_zone_theft').length;
+        const revenue = theftAlerts * BUCKET_PRICE;
+        document.getElementById('stat-revenue').textContent = `R${revenue.toLocaleString()}`;
+        document.getElementById('revenue-detail').textContent = `${theftAlerts} incident${theftAlerts !== 1 ? 's' : ''} prevented today`;
+        document.getElementById('stats-total-alerts').textContent = s.total_alerts_today || allAlerts.length;
+        document.getElementById('stats-revenue-saved').textContent = `R${revenue.toLocaleString()}`;
+        document.getElementById('stats-people-tracked').textContent = s.persons_tracked;
+
+        const rate = s.persons_tracked > 0 ? Math.round((theftAlerts / s.persons_tracked) * 100) : 0;
+        document.getElementById('stats-theft-rate').textContent = rate + '%';
+
+        updateHourlyChart();
+    }
+
+    // ====== CAMERAS ======
+    function updateCameras(cameras) {
+        const grid = document.getElementById('camera-grid');
+        if (!cameras?.length) { grid.innerHTML = '<p class="text-gray-600 text-xs">No cameras</p>'; return; }
+        grid.innerHTML = cameras.map(c => `
+            <div class="flex items-center gap-3 bg-accent rounded-lg px-3 py-2.5">
+                <div class="w-2 h-2 rounded-full ${c.is_online ? 'bg-turf-500' : 'bg-red-500'} ${c.is_online ? 'pulse-live' : ''}"></div>
+                <div class="flex-1">
+                    <div class="text-xs font-medium">${c.name}</div>
+                    <div class="text-[10px] text-gray-500">${c.zone}</div>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded ${c.is_online ? 'bg-turf-900 text-turf-400' : 'bg-red-900/30 text-red-400'}">${c.is_online ? 'LIVE' : 'OFF'}</span>
+            </div>
+        `).join('');
+    }
+
+    // ====== ALERTS ======
+    function addAlert(alert, animate = true) {
+        allAlerts.push(alert);
+        // Track hourly
+        const h = new Date(alert.timestamp * 1000).getHours();
+        alertsByHour[h] = (alertsByHour[h] || 0) + 1;
+
+        const feed = document.getElementById('panel-alerts');
+        if (feed.querySelector('.text-center')) feed.innerHTML = '';
+
+        const colors = {
+            high:   { border: 'border-alert-high', bg: 'bg-red-500/8',    badge: 'bg-alert-high' },
+            medium: { border: 'border-alert-med',  bg: 'bg-yellow-500/8', badge: 'bg-alert-med' },
+            low:    { border: 'border-alert-low',  bg: 'bg-blue-500/8',   badge: 'bg-alert-low' },
+        };
+        const c = colors[alert.severity] || colors.low;
+        const t = new Date(alert.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        const el = document.createElement('div');
+        el.className = `border-l-[3px] ${c.border} ${c.bg} rounded-r-lg px-4 py-3 cursor-pointer hover:brightness-110 transition ${animate ? 'alert-enter' : ''}`;
+        el.onclick = () => showTimeline(alert.person_id);
+        el.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="${c.badge} text-white text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${alert.severity}</span>
+                        <span class="text-[10px] text-gray-500">${t}</span>
+                        <span class="text-[10px] text-gray-600">${alert.id}</span>
+                    </div>
+                    <p class="text-xs text-gray-200 leading-relaxed">${alert.message}</p>
+                    ${alert.zone_path?.length ? `
+                        <div class="flex items-center gap-1 mt-2 flex-wrap">
+                            ${alert.zone_path.map(z => `<span class="text-[10px] bg-accent text-gray-400 px-1.5 py-0.5 rounded">${z}</span>`).join('<span class="text-gray-600 text-[10px]">&rarr;</span>')}
+                        </div>
+                    ` : ''}
+                </div>
+                <button onclick="event.stopPropagation(); acknowledgeAlert('${alert.id}', this)"
+                        class="shrink-0 text-[10px] bg-accent hover:bg-border px-2.5 py-1 rounded transition-colors ${alert.acknowledged ? 'opacity-30' : ''}" >
+                    ${alert.acknowledged ? 'Done' : 'Ack'}
+                </button>
+            </div>
+        `;
+        feed.insertBefore(el, feed.firstChild);
+
+        document.getElementById('alert-count').textContent = `${feed.children.length} alerts`;
+
+        // Update revenue immediately
+        const theftCount = allAlerts.filter(a => a.alert_type === 'cross_zone_theft').length;
+        const rev = theftCount * BUCKET_PRICE;
+        document.getElementById('stat-revenue').textContent = `R${rev.toLocaleString()}`;
+        document.getElementById('revenue-detail').textContent = `${theftCount} incident${theftCount !== 1 ? 's' : ''} prevented today`;
+        document.getElementById('stats-revenue-saved').textContent = `R${rev.toLocaleString()}`;
+
+        // Sound + notification
+        if (animate && alert.severity === 'high') {
+            playAlertSound();
+            sendNotification(alert);
+        }
+    }
+
+    async function acknowledgeAlert(id, btn) {
+        try {
+            const r = await fetch(`/api/alerts/${id}/acknowledge`, { method: 'POST' });
+            if (r.ok) { btn.textContent = 'Done'; btn.classList.add('opacity-30'); }
+        } catch (e) { console.error(e); }
+    }
+
+    // ====== MOVEMENT TIMELINE ======
+    function switchTab(tab) {
+        document.getElementById('tab-alerts').className = `pb-3 text-sm font-medium ${tab === 'alerts' ? 'tab-active' : 'tab-inactive'} transition-colors`;
+        document.getElementById('tab-timeline').className = `pb-3 text-sm font-medium ${tab === 'timeline' ? 'tab-active' : 'tab-inactive'} transition-colors`;
+        document.getElementById('panel-alerts').classList.toggle('hidden', tab !== 'alerts');
+        document.getElementById('panel-timeline').classList.toggle('hidden', tab !== 'timeline');
+    }
+
+    async function showTimeline(personId) {
+        switchTab('timeline');
+        const container = document.getElementById('timeline-content');
+        container.innerHTML = '<p class="text-xs text-gray-500">Loading...</p>';
+
+        try {
+            const r = await fetch(`/api/persons/${personId}/history`);
+            if (!r.ok) {
+                container.innerHTML = `<p class="text-xs text-gray-500">No history available for Person #${personId}</p>`;
+                return;
+            }
+            const data = await r.json();
+            renderTimeline(data, container);
+        } catch (e) {
+            container.innerHTML = `<p class="text-xs text-gray-500">Could not load timeline</p>`;
+        }
+    }
+
+    function renderTimeline(data, container) {
+        const zoneColors = {
+            'Driving Range':    { dot: 'border-turf-500 bg-turf-500/30', line: 'bg-turf-700', text: 'text-turf-400' },
+            'Short Game Area':  { dot: 'border-orange-500 bg-orange-500/30', line: 'bg-orange-700', text: 'text-orange-400' },
+            'Transition Path':  { dot: 'border-yellow-500 bg-yellow-500/30', line: 'bg-yellow-700', text: 'text-yellow-400' },
+        };
+        const defaultColor = { dot: 'border-gray-500 bg-gray-500/30', line: 'bg-gray-700', text: 'text-gray-400' };
+
+        // Person alerts
+        const personAlerts = allAlerts.filter(a => a.person_id === data.person_id);
+
+        let html = `
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h3 class="text-sm font-semibold">Person #${data.person_id}</h3>
+                    <p class="text-[10px] text-gray-500">Current zone: ${data.current_zone || 'Unknown'}</p>
+                </div>
+                <span class="text-[10px] bg-accent text-gray-400 px-2 py-1 rounded">${data.zone_sequence.length} zone visits</span>
+            </div>
+        `;
+
+        if (personAlerts.length > 0) {
+            html += `<div class="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mb-4">
+                <p class="text-[10px] text-red-400 font-medium">${personAlerts.length} alert${personAlerts.length > 1 ? 's' : ''} for this person</p>
+            </div>`;
+        }
+
+        html += '<div class="ml-2">';
+        data.zone_sequence.forEach((entry, i) => {
+            const c = zoneColors[entry.zone] || defaultColor;
+            const time = new Date(entry.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const isLast = i === data.zone_sequence.length - 1;
+            const duration = !isLast ? Math.round(data.zone_sequence[i + 1].timestamp - entry.timestamp) : null;
+
+            html += `
+                <div class="flex gap-3">
+                    <div class="flex flex-col items-center">
+                        <div class="timeline-dot ${c.dot}"></div>
+                        ${!isLast ? `<div class="timeline-line ${c.line} flex-1"></div>` : ''}
+                    </div>
+                    <div class="pb-4 -mt-0.5">
+                        <div class="text-xs font-medium ${c.text}">${entry.zone}</div>
+                        <div class="text-[10px] text-gray-500">${time}${duration !== null ? ` &middot; ${duration}s` : ' &middot; current'}</div>
+                    </div>
+                </div>
             `;
+        });
+        html += '</div>';
 
-            feed.insertBefore(el, feed.firstChild);
+        container.innerHTML = html;
+    }
 
-            // Update count
-            document.getElementById('alert-count').textContent =
-                `${feed.children.length} alerts`;
-
-            // Play notification sound for high severity
-            if (alert.severity === 'high' && animate) {
-                playAlertSound();
-            }
+    // ====== HOURLY CHART ======
+    function updateHourlyChart() {
+        const chart = document.getElementById('hourly-chart');
+        const now = new Date().getHours();
+        const maxVal = Math.max(1, ...alertsByHour);
+        let html = '';
+        for (let h = 0; h < 24; h++) {
+            const count = alertsByHour[h] || 0;
+            const pct = Math.max(4, (count / maxVal) * 100);
+            const isCurrent = h === now;
+            const hasAlerts = count > 0;
+            html += `
+                <div class="flex-1 flex flex-col items-center gap-0.5" title="${h}:00 - ${count} alerts">
+                    <div class="w-full rounded-t-sm transition-all duration-500 ${hasAlerts ? 'bg-turf-500' : 'bg-accent'} ${isCurrent ? 'ring-1 ring-turf-400' : ''}"
+                         style="height: ${pct}%"></div>
+                    ${h % 6 === 0 ? `<span class="text-[8px] text-gray-600">${h}</span>` : ''}
+                </div>
+            `;
         }
+        chart.innerHTML = html;
+    }
 
-        async function acknowledgeAlert(alertId, button) {
-            try {
-                const resp = await fetch(`/api/alerts/${alertId}/acknowledge`, { method: 'POST' });
-                if (resp.ok) {
-                    button.textContent = 'Done';
-                    button.classList.add('opacity-30');
-                }
-            } catch (e) {
-                console.error('Failed to acknowledge:', e);
-            }
-        }
-
-        function playAlertSound() {
-            // Simple beep using Web Audio API
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // ====== SOUND ======
+    function playAlertSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            // Two-tone alert
+            [800, 600].forEach((freq, i) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.connect(gain);
                 gain.connect(ctx.destination);
-                osc.frequency.value = 800;
-                gain.gain.value = 0.1;
-                osc.start();
-                osc.stop(ctx.currentTime + 0.2);
-            } catch (e) {}
+                osc.frequency.value = freq;
+                gain.gain.value = 0.08;
+                osc.start(ctx.currentTime + i * 0.15);
+                osc.stop(ctx.currentTime + i * 0.15 + 0.12);
+            });
+        } catch (e) {}
+    }
+
+    // ====== BROWSER NOTIFICATIONS ======
+    function initNotifications() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
         }
+    }
 
-        // --- Periodic Refresh (status + alerts) ---
-        let knownAlertIds = new Set();
+    function sendNotification(alert) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const n = new Notification('RangeGuard Alert', {
+                body: alert.message,
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2322c55e"><circle cx="12" cy="12" r="10"/></svg>',
+                tag: alert.id,
+                requireInteraction: false,
+            });
+            setTimeout(() => n.close(), 8000);
+        }
+    }
 
-        setInterval(async () => {
-            try {
-                // Refresh status
-                const statusResp = await fetch('/api/status');
-                if (statusResp.ok) {
-                    const status = await statusResp.json();
-                    updateStatus(status);
-                }
+    // ====== POLLING FALLBACK ======
+    setInterval(async () => {
+        try {
+            const [statusR, alertsR] = await Promise.all([
+                fetch('/api/status'),
+                fetch('/api/alerts?limit=50'),
+            ]);
+            if (statusR.ok) updateStatus(await statusR.json());
+            if (alertsR.ok) {
+                const alerts = await alertsR.json();
+                alerts.forEach(a => {
+                    if (!knownAlertIds.has(a.id)) {
+                        knownAlertIds.add(a.id);
+                        addAlert(a, true);
+                    }
+                });
+            }
+        } catch (e) {}
+    }, 3000);
 
-                // Refresh alerts
-                const alertsResp = await fetch('/api/alerts?limit=50');
-                if (alertsResp.ok) {
-                    const alerts = await alertsResp.json();
-                    let hasNew = false;
-                    alerts.forEach(alert => {
-                        if (!knownAlertIds.has(alert.id)) {
-                            knownAlertIds.add(alert.id);
-                            addAlert(alert, hasNew);
-                            hasNew = true;
-                        }
-                    });
-                }
-            } catch (e) {}
-        }, 3000);
-
-        // --- Start ---
-        connect();
-    </script>
+    // ====== INIT ======
+    initNotifications();
+    updateHourlyChart();
+    connect();
+</script>
 </body>
 </html>
